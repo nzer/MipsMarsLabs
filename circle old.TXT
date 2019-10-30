@@ -1,0 +1,9 @@
+	# compute y position
+	mul $t0, $s0, $s0 # squares
+	mul $t1, $s1, $s1
+	mtc1 $t0, $f0 # f0 - x
+	mtc1 $t1, $f1 # f1 - radius
+	sub.s $f0, $f1, $f0
+	sqrt.s $f0, $f0
+	round.w.s $f0, $f0
+	mfc1 $t3, $f0 # y number
