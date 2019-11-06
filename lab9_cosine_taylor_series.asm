@@ -1,16 +1,29 @@
+.data
+	deg_to_rad: .double 0.0174533
 .text
-	li $a0, 5
-	li $t0, 10
-	mtc1.d $t0, $f12
+	main:
+	li $v0, 5
+	syscall
+	li $t0, -1
+	beq $t0, $v0, exit
+	
+	l.d $f0, deg_to_rad
+	mtc1.d $v0, $f12
 	cvt.d.w $f12, $f12
+	mul.d $f12, $f12, $f0
 	jal cos
 	
+	mov.d $f12, $f0
+	li $v0, 3
+	syscall
+	
+	exit:
 	li $v0, 10
 	syscall
 
 	# cos(x)
-	# args: $a0 - precision, $f12 - x
-	# ret: $f10 - cosine
+	# args: $f12 - x
+	# ret: $f0 - cosine
 	cos:
 	li $s0, 2 # index
 	li $t1, 1
@@ -58,6 +71,7 @@
 	li $a0, 28
 	ble $s0, $a0, cos_loop
 	nop
+	mov.d $f0, $f10
 	jr $ra
 	
 	# $f20 - base, $a1 exponent
