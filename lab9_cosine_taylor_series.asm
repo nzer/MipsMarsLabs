@@ -1,42 +1,76 @@
 .text
-	li $a0, 14
-	jal fact
+	li $a0, 5
+	li $t0, 10
+	mtc1.d $t0, $f12
+	cvt.d.w $f12, $f12
+	jal cos
 	
 	li $v0, 10
 	syscall
 
 	# cos(x)
 	# args: $a0 - precision, $f12 - x
-	# ret: $f0 - cosine
+	# ret: $f10 - cosine
 	cos:
-	move $t0, $zero
+	li $s0, 2 # index
 	li $t1, 1
 	mtc1 $t1, $f10 # initial value = 1
-	cvt.d.w $f0, $f10
+	cvt.d.w $f10, $f10
+	li $s1, 0 # positive term bool
 	cos_loop:
 	# $f4 - current term, $f6 - x^2, $f8 - x!, $f10 - cosine value
-	addi $t0, $t0, 1
-	bge $t0, $a0, cos_loop
-	jr $ra
-	
-	# $a0 - base, $a1 exponent
-	pow:
-	# save $ra to stack
+	#POWER
 	addi $sp, $sp, -4
 	sw $ra, ($sp)
-	beq $a1, $zero, pow_zero # return 1 if exponent is zero
-	addi $a1, $a1, -1
+	mov.d $f20, $f12
+	move $a1, $s0
 	jal pow
-	mul $v0, $a0, $v0
-	j pow_exit
-	pow_zero:
-	li $v0, 1
-	j pow_exit
-	pow_exit:
-	# restore $ra from stack
+	mov.d $f6, $f0
 	lw $ra, ($sp)
 	addi $sp, $sp, 4
-	# return
+	
+	#FACT
+	addi $sp, $sp, -4
+	sw $ra, ($sp)
+	move $a0, $s0
+	jal fact
+	mov.d $f8, $f0
+	lw $ra, ($sp)
+	addi $sp, $sp, 4
+	
+	#TERM
+	div.d $f4, $f6, $f8
+	abs.d $f4, $f4
+	#negative if 0
+	bnez $s1, skip_neg
+	neg.d $f4, $f4
+	li $s1, 1
+	j skip_pos
+	#positive if 1
+	skip_neg:
+	li $s1, 0
+	skip_pos:
+	
+	#VALUE
+	add.d $f10, $f10, $f4
+	
+	addi $s0, $s0, 2
+	li $a0, 28
+	ble $s0, $a0, cos_loop
+	nop
+	jr $ra
+	
+	# $f20 - base, $a1 exponent
+	# $f0 - return
+	pow:
+	mov.d $f0, $f20
+	addi $a1, $a1, -1
+	beqz $a1, pow_ret
+	pow_loop:
+	mul.d $f0, $f0, $f20
+	addi $a1, $a1, -1
+	bnez $a1, pow_loop
+	pow_ret:
 	jr $ra
 	
 	# args: $a0 - factorial
